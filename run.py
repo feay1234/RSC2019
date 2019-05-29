@@ -3,7 +3,7 @@ import pandas as pd
 import pyltr
 from keras.models import load_model
 from keras.preprocessing.sequence import pad_sequences
-from BPRGRU import BPRGRU
+from BPRGRU import BPRGRU, identity_loss
 
 
 # Read files
@@ -76,7 +76,9 @@ for i in range(epochs):
     else:
         print("Early Stopping")
         break
-        #a = load_model('gru.epoch.%d.h5' % i, custom_objects={'identity_loss': identity_loss})
+
+# load the best model
+ranker.model = load_model('h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss})
 
 
 # Generate submission file
