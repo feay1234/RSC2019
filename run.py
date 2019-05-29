@@ -43,9 +43,9 @@ if __name__ == '__main__':
     # df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols, nrows=100)
     # df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols, nrows=100)
 
-    df = pd.read_csv(path+"/data/train.groupby.csv", sep="\t", names=cols, nrows=10)
-    df_val = pd.read_csv(path+"/data/val.groupby.csv", sep="\t", names=cols, nrows=10)
-    df_test = pd.read_csv(path+"/data/test.groupby.csv", sep="\t", names=cols, nrows=10)
+    df = pd.read_csv(path+"/data/train.groupby.csv", sep="\t", names=cols)
+    df_val = pd.read_csv(path+"/data/val.groupby.csv", sep="\t", names=cols)
+    df_test = pd.read_csv(path+"/data/test.groupby.csv", sep="\t", names=cols)
 
     # metadata = pd.read_csv("data/item_metadata.csv")
 
