@@ -8,11 +8,11 @@ from BPRGRU import BPRGRU, identity_loss
 
 # Read files
 cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
-df = pd.read_csv("data/train.groupby.csv", sep="\t", names=cols, nrows=100)
-df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols, nrows=100)
-df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols, nrows=100)
+df = pd.read_csv("data/train.groupby.csv", sep="\t", names=cols )
+df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols)
+df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols)
 
-metadata = pd.read_csv("data/item_metadata.csv", nrows=100)
+# metadata = pd.read_csv("data/item_metadata.csv")
 
 
 # Indexing all items
@@ -42,7 +42,7 @@ item_index = {int(i): idx + 1 for idx, i in enumerate(allItems)}
 # Initialise params
 
 modelName = "bprgru"
-dim = 100
+dim = 50
 maxlen = 10
 epochs = 50
 
