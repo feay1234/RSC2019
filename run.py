@@ -7,13 +7,12 @@ from BPRGRU import BPRGRU, identity_loss
 
 
 # Read files
-path = "/Users/jarana/local/workspace/ucl/recsys_challenges/2019/notebooks/"
 cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
-df = pd.read_csv(path+"train.groupby.csv", sep="\t", names=cols, nrows=100)
-df_val = pd.read_csv(path+"val.groupby.csv", sep="\t", names=cols, nrows=100)
-df_test = pd.read_csv(path+"test.groupby.csv", sep="\t", names=cols, nrows=100)
+df = pd.read_csv("data/train.groupby.csv", sep="\t", names=cols, nrows=100)
+df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols, nrows=100)
+df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols, nrows=100)
 
-metadata = pd.read_csv("/Users/jarana/local/workspace/ucl/recsys_challenges/2019/data/item_metadata.csv", nrows=100)
+metadata = pd.read_csv("data/item_metadata.csv", nrows=100)
 
 
 # Indexing all items
