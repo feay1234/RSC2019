@@ -1,5 +1,7 @@
 import sys;
-from keras.layers import Input, Embedding, Flatten, GRU, Dense, merge, initializations
+
+from keras.initializers import Initializer
+from keras.layers import Input, Embedding, Flatten, GRU, Dot, Concatenate, merge, Subtract, Activation
 from keras.models import Model
 from keras import backend as K
 import numpy as np
@@ -8,7 +10,7 @@ from keras_preprocessing.sequence import pad_sequences
 from utils import negative_sample
 
 def init_normal(shape, name=None):
-    return initializations.normal(shape, scale=0.01, name=name)
+    return Initializer.normal(shape, scale=0.01, name=name)
 
 def identity_loss(y_true, y_pred):
     return K.mean(y_pred - 0 * y_true)
@@ -52,10 +54,10 @@ class BPRGRU():
         # pPrice = featureDense(posPriceInput)
         # nPrice = featureDense(negPriceInput)
 
-        #pDot = Dot(axes = -1)([uEmb, pEmb])
-        #nDot = Dot(axes = -1)([uEmb, nEmb])
-        pDot = merge([uEmb, pEmb], mode='dot')
-        nDot = merge([uEmb, nEmb], mode='dot')
+        pDot = Dot(axes = -1)([uEmb, pEmb])
+        nDot = Dot(axes = -1)([uEmb, nEmb])
+        # pDot = Dot(([uEmb, pEmb], mode='dot')
+        # nDot = merge([uEmb, nEmb], mode='dot')
 
         # pDot = merge([pDot, pPosition, pPrice], mode="concat")
         # nDot = merge([nDot, nPosition, nPrice], mode="concat")
@@ -65,10 +67,16 @@ class BPRGRU():
         rel_score = pDot
         irr_score = nDot
 
-        out = merge([rel_score, irr_score], mode=bpr_triplet_loss, output_shape=(1,))
+        # Subtract scores.
+        diff = Subtract()([rel_score, irr_score])
+
+        # Pass difference through sigmoid function.
+        prob = Activation("sigmoid")(diff)
+
+        # out = merge([rel_score, irr_score], mode=bpr_triplet_loss, output_shape=(1,))
 
         # model = Model(input = [posInput, negInput, seqInput, posPositionInput, negPositionInput, posPriceInput, negPriceInput], output = out)
-        self.model = Model(input = [posInput, negInput, seqInput], output = out)
+        self.model = Model(inputs = [posInput, negInput, seqInput], outputs = prob)
         self.model.compile(optimizer = "adam", loss = identity_loss)
         self.get_score = K.function([posInput, seqInput], [rel_score])
 

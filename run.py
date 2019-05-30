@@ -37,15 +37,18 @@ if __name__ == '__main__':
     maxlen = args.ml
     epochs = args.epochs
 
+    # path = ""
+    # modelName = "bprgru"
+
     # Read files
     cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
     # df = pd.read_csv("data/train.groupby.csv", sep="\t", names=cols, nrows=100)
     # df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols, nrows=100)
     # df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols, nrows=100)
-
-    df = pd.read_csv(path+"/data/train.groupby.csv", sep="\t", names=cols)
-    df_val = pd.read_csv(path+"/data/val.groupby.csv", sep="\t", names=cols)
-    df_test = pd.read_csv(path+"/data/test.groupby.csv", sep="\t", names=cols)
+    #
+    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols)
+    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols)
+    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols)
 
     # metadata = pd.read_csv("data/item_metadata.csv")
 
@@ -73,9 +76,7 @@ if __name__ == '__main__':
 
     item_index = {int(i): idx + 1 for idx, i in enumerate(allItems)}
 
-
-
-
+    # modelName = "bprgru"
     if modelName == "bprgru":
         ranker = BPRGRU(dim, maxlen, item_index)
 
@@ -95,19 +96,19 @@ if __name__ == '__main__':
 
     for i in range(epochs):
         x_train, y_train = ranker.generate_train_data(df)
-        ranker.model.fit(x_train, y_train, batch_size=256, nb_epoch=1, verbose=2)
+        ranker.model.fit(x_train, y_train, batch_size=256, epochs=1, verbose=1)
         pred = ranker.get_score(x_val)[0].flatten()
         ndcg = metric.calc_mean(valSession, y_val, pred)
         print('Epoch:', i, ' Our model:',  ndcg)
         if bestNDCG < ndcg:
             bestNDCG = ndcg
-            ranker.model.save(path+'/h5/%s.h5' % runName)
+            ranker.model.save(path+'h5/%s.h5' % runName)
         else:
             print("Early Stopping")
             break
 
     # load the best model
-    ranker.model = load_model(path+'/h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss})
+    ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss})
 
 
     # Generate submission file
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     df_rank = df_rank.groupby(['id'])['item'].apply(list)
     df_rank = df_rank.apply(lambda x : ' '.join(x))
     df_test["item_recommendations"] = df_rank.values
-    df_test[['user_id','session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(path+'/res/submission_%s.csv' % runName, sep=',', header=True, index=False)
+    df_test[['user_id','session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(path+'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
 
 
 
