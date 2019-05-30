@@ -1,7 +1,7 @@
 import sys;
 
 from keras.initializers import Initializer
-from keras.layers import Input, Embedding, Flatten, GRU, Dot, Concatenate, merge, Subtract, Activation
+from keras.layers import Input, Embedding, Flatten, GRU, Dot, Concatenate, Subtract, Activation
 from keras.models import Model
 from keras import backend as K
 import numpy as np
