@@ -77,7 +77,7 @@ class BPRGRU():
 
         # model = Model(input = [posInput, negInput, seqInput, posPositionInput, negPositionInput, posPriceInput, negPriceInput], output = out)
         self.model = Model(inputs = [posInput, negInput, seqInput], outputs = prob)
-        self.model.compile(optimizer = "adam", loss = identity_loss)
+        self.model.compile(optimizer = "adam", loss = "binary_crossentropy")
         self.get_score = K.function([posInput, seqInput], [rel_score])
 
     def predict(self, inp):
