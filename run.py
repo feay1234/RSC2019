@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     for i in range(epochs):
         x_train, y_train = ranker.generate_train_data(df)
-        ranker.model.fit(x_train, y_train, batch_size=256, nb_epoch=1)
+        ranker.model.fit(x_train, y_train, batch_size=256, nb_epoch=1, verbose=2)
         pred = ranker.get_score(x_val)[0].flatten()
         ndcg = metric.calc_mean(valSession, y_val, pred)
         print('Epoch:', i, ' Our model:',  ndcg)
