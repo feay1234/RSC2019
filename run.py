@@ -37,8 +37,8 @@ if __name__ == '__main__':
     maxlen = args.ml
     epochs = args.epochs
 
-    path = ""
-    modelName = "bprgru"
+    # path = ""
+    # modelName = "bprgru"
 
     # Read files
     cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
@@ -46,6 +46,7 @@ if __name__ == '__main__':
     # df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols, nrows=100)
     # df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols, nrows=100)
     #
+
     df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols)
     df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols)
     df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols)
