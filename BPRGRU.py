@@ -1,8 +1,9 @@
 import sys;
 
 from keras.initializers import Initializer
-from keras.layers import Input, Embedding, Flatten, GRU, Dot, Concatenate, Subtract, Activation
-from keras.models import Model
+from keras.layers import Input, Embedding, Flatten, GRU, Dot, Concatenate, Subtract, Activation, SimpleRNN
+from keras.models import Model, Sequential
+
 from keras import backend as K
 import numpy as np
 from keras_preprocessing.sequence import pad_sequences
@@ -10,7 +11,7 @@ from keras_preprocessing.sequence import pad_sequences
 from utils import negative_sample
 
 def init_normal(shape, name=None):
-    return Initializer.normal(shape, scale=0.01, name=name)
+    return K.random_normal_variable(shape, mean = 0.0, scale=0.01, name=name)
 
 def identity_loss(y_true, y_pred):
     return K.mean(y_pred - 0 * y_true)
@@ -40,13 +41,21 @@ class BPRGRU():
         # posPriceInput = Input(shape = (1, ))
         # negPriceInput = Input(shape = (1, ))
 
-        itemEmbedding = Embedding(len(item_index)+1, self.dim)
-        gru = GRU(self.dim)
+        itemEmbedding = Embedding(len(item_index)+1, self.dim, mask_zero=True)
+
+        # rnn = Sequential()
+        # rnn.add(itemsEmbedding)
+        # rnn.add(SimpleRNN(self.dim, unroll=True))
+        # gru = SimpleRNN(self.dim, unroll=True)
+        gru = SimpleRNN(self.dim, unroll=True)
         # featureDense = Dense(100, activation='relu')
 
         uEmb = gru(itemEmbedding(seqInput))
-        pEmb = Flatten()(itemEmbedding(posInput))
-        nEmb = Flatten()(itemEmbedding(negInput))
+        # uEmb = rnn(seqInput)
+        # pEmb = Flatten()(itemEmbedding(posInput))
+        # nEmb = Flatten()(itemEmbedding(negInput))
+        pEmb = itemEmbedding(posInput)
+        nEmb = itemEmbedding(negInput)
 
         # pPosition = featureDense(posPositionInput)
         # nPosition = featureDense(negPositionInput)
@@ -98,6 +107,7 @@ class BPRGRU():
                 # pos_price.append(prices[impressions.index(gtItem)] if gtItem in impressions else max(prices))
                 # pos_position.append(impressions.index(gtItem) + 1 if gtItem in impressions else 26)
 
+
                 if rows['reference'].nunique() > 1:
                     pool = [self.item_index[i] for i in rows['reference'].unique().tolist()]
                 else:
@@ -119,10 +129,10 @@ class BPRGRU():
 
         pos = np.array(pos)
         neg = np.array(neg)
-        seq = pad_sequences(seq, maxlen=10)
-        pos_feature = np.array(pos_feature)
-        neg_feature = np.array(neg_feature)
-        seq_feature = pad_sequences(seq_feature, maxlen=10)
+        seq = pad_sequences(seq, maxlen=self.maxlen)
+        # pos_feature = np.array(pos_feature)
+        # neg_feature = np.array(neg_feature)
+        # seq_feature = pad_sequences(seq_feature, maxlen=self.maxlen)
         # pos_price = np.array(pos_price)
         # neg_price = np.array(neg_price)
         # pos_position = np.array(pos_position)
@@ -159,7 +169,7 @@ class BPRGRU():
 
         items = np.array(items)
         items = items.reshape(len(items), 1)
-        seq = pad_sequences(seq, maxlen=10)
+        seq = pad_sequences(seq, maxlen=self.maxlen)
         sessions = np.array(sessions)
         labels = np.array(labels)
         # prices = np.array(prices).reshape(len(items), 1)

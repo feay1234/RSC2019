@@ -3,26 +3,27 @@ import pandas as pd
 import pyltr
 from keras.models import load_model
 from keras.preprocessing.sequence import pad_sequences
-from BPRGRU import BPRGRU, identity_loss
+from BPRGRU import BPRGRU, identity_loss, init_normal
 import argparse
+from time import time
 
 #################### Arguments ####################
 def parse_args():
 
     parser = argparse.ArgumentParser(description="Run RecSys Challenge 2019 Experiments")
 
-    parser.add_argument('--path', type=str, help='Path to data')
+    parser.add_argument('--path', type=str, help='Path to data', default="")
 
     parser.add_argument('--model', type=str,
-                        help='Model Name: bprgru')
+                        help='Model Name: bprgru', default="bprgru")
 
-    parser.add_argument('--d', type=int, default=100,
+    parser.add_argument('--d', type=int, default=32,
                         help='Dimension')
 
-    parser.add_argument('--ml', type=int, default=10,
+    parser.add_argument('--ml', type=int, default=5,
                         help='Maximum lenght of user sequence')
 
-    parser.add_argument('--epochs', type=int, default=50,
+    parser.add_argument('--epochs', type=int, default=100,
                         help='Epoch number')
 
     return parser.parse_args()
@@ -37,14 +38,11 @@ if __name__ == '__main__':
     maxlen = args.ml
     epochs = args.epochs
 
-    # path = ""
-    # modelName = "bprgru"
-
     # Read files
     cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
-    # df = pd.read_csv("data/train.groupby.csv", sep="\t", names=cols, nrows=100)
-    # df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols, nrows=100)
-    # df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols, nrows=100)
+    # df = pd.read_csv("data/train.groupby.csv", sep="\t", names=cols, nrows=1000)
+    # df_val = pd.read_csv("data/val.groupby.csv", sep="\t", names=cols, nrows=1000)
+    # df_test = pd.read_csv("data/test.groupby.csv", sep="\t", names=cols, nrows=1000)
     #
 
     df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols)
@@ -95,12 +93,20 @@ if __name__ == '__main__':
 
     bestNDCG = 0
 
-    for i in range(epochs):
+
+    for epoch in range(epochs):
+        t1 = time()
         x_train, y_train = ranker.generate_train_data(df)
-        ranker.model.fit(x_train, y_train, batch_size=256, epochs=1, verbose=1)
+        t2 = time()
+        hist = ranker.model.fit(x_train, y_train, batch_size=256, epochs=1, verbose=0, shuffle=True)
+        loss = hist.history['loss'][0]
+        t3 = time()
         pred = ranker.get_score(x_val)[0].flatten()
         ndcg = metric.calc_mean(valSession, y_val, pred)
-        print('Epoch:', i, ' Our model:',  ndcg)
+        output = 'Iteration %d, data[%.1f s], train[%.1f s], NDCG = %.4f, loss = %.4f, test[%.1f s]' % (
+            epoch, t2 - t1, t3-t2, ndcg, loss, time() - t3)
+        print(output)
+
         if bestNDCG < ndcg:
             bestNDCG = ndcg
             ranker.model.save(path+'h5/%s.h5' % runName)
@@ -109,7 +115,8 @@ if __name__ == '__main__':
             break
 
     # load the best model
-    ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss})
+    # ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss, 'init_normal': init_normal})
+    ranker.model = load_model(path+'h5/%s.h5' % runName)
 
 
     # Generate submission file
