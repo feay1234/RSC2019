@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=100,
                         help='Epoch number')
 
-    parser.add_argument('--small', type=int, default=0,
+    parser.add_argument('--small', type=int, default=1,
                         help='Run on small dataset')
 
     return parser.parse_args()
@@ -46,6 +46,7 @@ if __name__ == '__main__':
     cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
 
 
+    print("Reading......")
     df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=100)
     df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=100)
     df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=100)
@@ -104,8 +105,12 @@ if __name__ == '__main__':
         t3 = time()
         pred = ranker.get_score(x_val)[0].flatten()
         ndcg = metric.calc_mean(valSession, y_val, pred)
-        output = 'Iteration %d, data[%.1f s], train[%.1f s], NDCG = %.4f, loss = %.4f, test[%.1f s]' % (
-            epoch, t2 - t1, t3-t2, ndcg, loss, time() - t3)
+        output = 'Iteration %d, data[%.1f s], train[%.1f s], loss = %.4f, NDCG = %.4f, test[%.1f s]' % (
+            epoch, t2 - t1, t3-t2, loss, ndcg, time() - t3)
+
+        with open(path+"out/%s.out" % runName, "a") as myfile:
+            myfile.write(output+"\n")
+
         print(output)
 
         if bestNDCG < ndcg:
