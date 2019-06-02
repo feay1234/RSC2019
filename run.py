@@ -46,9 +46,9 @@ if __name__ == '__main__':
     cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
 
 
-    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=100)
-    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=100)
-    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=100)
+    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=100)
+    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=100)
+    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=100)
 
     # metadata = pd.read_csv("data/item_metadata.csv")
 
