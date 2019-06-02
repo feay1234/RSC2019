@@ -26,6 +26,9 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=100,
                         help='Epoch number')
 
+    parser.add_argument('--small', type=int, default=0,
+                        help='Run on small dataset')
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -37,17 +40,15 @@ if __name__ == '__main__':
     dim = args.d
     maxlen = args.ml
     epochs = args.epochs
+    small = True if args.small == 1 else False
 
     # Read files
     cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
 
-    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=100)
-    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=100)
-    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=100)
 
-    # df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols)
-    # df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols)
-    # df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols)
+    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=100)
+    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=100)
+    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=100)
 
     # metadata = pd.read_csv("data/item_metadata.csv")
 
