@@ -8,6 +8,9 @@ import argparse
 from time import time
 
 #################### Arguments ####################
+from DRCF import DRCF
+
+
 def parse_args():
 
     parser = argparse.ArgumentParser(description="Run RecSys Challenge 2019 Experiments")
@@ -15,7 +18,7 @@ def parse_args():
     parser.add_argument('--path', type=str, help='Path to data', default="")
 
     parser.add_argument('--model', type=str,
-                        help='Model Name: bprgru', default="bprgru")
+                        help='Model Name: bprgru', default="drcf")
 
     parser.add_argument('--d', type=int, default=32,
                         help='Dimension')
@@ -81,6 +84,9 @@ if __name__ == '__main__':
     # modelName = "bprgru"
     if modelName == "bprgru":
         ranker = BPRGRU(dim, maxlen, item_index)
+    elif modelName == "drcf":
+        ranker = DRCF(dim, maxlen, item_index)
+
 
 
     runName = "%s_d%d_ml%d" % (modelName, dim, maxlen)
