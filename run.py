@@ -32,6 +32,7 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == '__main__':
+    start = time()
 
     args = parse_args()
 
@@ -137,4 +138,6 @@ if __name__ == '__main__':
     df_test[['user_id','session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(path+'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
 
 
-
+    total_time = (time() - start ) / 3600
+    with open(path + "out/%s.out" % runName, "a") as myfile:
+        myfile.write("Total time: %.2f h" % total_time + "\n")
