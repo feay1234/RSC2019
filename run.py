@@ -32,6 +32,9 @@ def parse_args():
     parser.add_argument('--small', type=int, default=1,
                         help='Run on small dataset')
 
+    parser.add_argument('--ns', type=str, default="city",
+                        help='Negative Sample Mode : ')
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -45,6 +48,7 @@ if __name__ == '__main__':
     maxlen = args.ml
     epochs = args.epochs
     small = True if args.small == 1 else False
+    negSampleMode = args.ns
 
     # Read files
     cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
@@ -83,13 +87,13 @@ if __name__ == '__main__':
 
     # modelName = "bprgru"
     if modelName == "bprgru":
-        ranker = BPRGRU(dim, maxlen, item_index)
+        ranker = BPRGRU(dim, maxlen, item_index, negSampleMode)
     elif modelName == "drcf":
-        ranker = DRCF(dim, maxlen, item_index)
+        ranker = DRCF(dim, maxlen, item_index, negSampleMode)
 
 
 
-    runName = "%s_d%d_ml%d" % (modelName, dim, maxlen)
+    runName = "%s_d%d_ml%d_%s" % (modelName, dim, maxlen, negSampleMode)
 
 
 

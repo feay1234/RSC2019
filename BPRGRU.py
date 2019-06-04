@@ -24,10 +24,11 @@ def bpr_triplet_loss(X):
 
 class BPRGRU():
 
-    def __init__(self, dim, maxlen, item_index):
+    def __init__(self, dim, maxlen, item_index, negSampleMode="normal"):
         self.dim = dim
         self.maxlen = maxlen
         self.item_index = item_index
+        self.negSampleMode = negSampleMode
 
 
         posInput = Input(shape = (1, ))
@@ -106,19 +107,41 @@ class BPRGRU():
                 # pos_price.append(prices[impressions.index(gtItem)] if gtItem in impressions else max(prices))
                 # pos_position.append(impressions.index(gtItem) + 1 if gtItem in impressions else 26)
 
+                interactions = [self.item_index[int(i)] for i in row['interactions'].split("|")] if type(
+                    row['interactions']) == str else []
 
-                if rows['reference'].nunique() > 1:
-                    pool = [self.item_index[i] for i in rows['reference'].unique().tolist()]
-                else:
+                if self.negSampleMode == "city":
+
+
+                    if rows['reference'].nunique() > 1:
+                        pool = [self.item_index[i] for i in rows['reference'].unique().tolist()]
+                    else:
+                        pool = impressions
+                        if len(pool) == 1:
+                            pool = np.arange(len(self.item_index)).tolist()
+
+                elif self.negSampleMode == "imp":
                     pool = impressions
                     if len(pool) == 1:
                         pool = np.arange(len(self.item_index)).tolist()
 
+                elif self.negSampleMode == "nce":
+                    pool = impressions
+                    if len(pool) == 1:
+                        pool = np.arange(len(self.item_index)).tolist()
+                    else:
+                        pool.remove(gtItem)
+                        tmpSeq = [interactions] * len(pool)
+                        tmpSeq = pad_sequences(tmpSeq, maxlen=self.maxlen)
+                        # print(pool)
+
+                        pool = np.expand_dims(pool, axis=-1)
+                        pred = self.predict([np.array(pool), tmpSeq])
+                        pool = [[x for _, x in sorted(zip(pred, pool))][-1]]
+
                 sample = negative_sample(pool, gtItem)
                 neg.append(sample)
                 #             neg_feature.append(get_item_feature(sample))
-                interactions = [self.item_index[int(i)] for i in row['interactions'].split("|")] if type(
-                    row['interactions']) == str else []
                 # neg_price.append(prices[impressions.index(sample)] if sample in impressions else max(prices))
                 # neg_position.append(impressions.index(sample) + 1 if sample in impressions else 26)
 

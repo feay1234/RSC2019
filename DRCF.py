@@ -13,18 +13,17 @@ from BPRGRU import BPRGRU
 
 class DRCF(BPRGRU):
 
-    def __init__(self, dim, maxlen, item_index):
+    def __init__(self, dim, maxlen, item_index, negSampleMode="normal"):
 
         self.dim = dim
         self.maxlen = maxlen
         self.item_index = item_index
         self.dim_mlp = [self.dim * 2, self.dim]
-
+        self.negSampleMode = negSampleMode
 
         posInput = Input(shape = (1, ))
         negInput = Input(shape = (1, ))
         seqInput = Input(shape = (self.maxlen,))
-
 
         itemDotEmbedding = Embedding(len(item_index)+1, self.dim)
         itemMulEmbedding = Embedding(len(item_index)+1, self.dim)
