@@ -2,7 +2,7 @@ import sys;
 
 from keras.layers import Input, Embedding, GRU, Dot, Subtract, Activation, SimpleRNN
 from keras.models import Model
-
+from tqdm.autonotebook import tqdm
 from keras import backend as K
 import numpy as np
 from keras_preprocessing.sequence import pad_sequences
@@ -96,7 +96,7 @@ class BPRGRU():
     def generate_train_data(self, df):
 
         pos, neg, seq, pos_feature, neg_feature, seq_feature, pos_price, neg_price, pos_position, neg_position = [], [], [], [], [], [], [], [], [], []
-        for city, rows in df.groupby("city"):
+        for city, rows in tqdm(df.groupby("city")):
             for idx, row in rows.iterrows():
                 impressions = [self.item_index[int(i)] for i in row['impressions'].split("|")]
                 prices = [int(i) for i in row['prices'].split("|")]
@@ -130,7 +130,8 @@ class BPRGRU():
                     if len(pool) == 1:
                         pool = np.arange(len(self.item_index)).tolist()
                     else:
-                        pool.remove(gtItem)
+                        if gtItem in pool:
+                            pool.remove(gtItem)
                         tmpSeq = [interactions] * len(pool)
                         tmpSeq = pad_sequences(tmpSeq, maxlen=self.maxlen)
                         # print(pool)
