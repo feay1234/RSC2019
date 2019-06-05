@@ -129,9 +129,9 @@ if __name__ == '__main__':
         if bestNDCG < ndcg:
             bestNDCG = ndcg
             ranker.model.save(path+'h5/%s.h5' % runName)
-        else:
-            print("Early Stopping")
-            break
+        # else:
+        #     print("Early Stopping")
+        #     break
 
     # load the best model
     # ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss, 'init_normal': init_normal})
