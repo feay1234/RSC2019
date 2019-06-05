@@ -10,6 +10,7 @@ from datetime import datetime
 
 #################### Arguments ####################
 from DRCF import DRCF
+from MultiRanker import MultiRanker
 
 
 def parse_args():
@@ -19,7 +20,7 @@ def parse_args():
     parser.add_argument('--path', type=str, help='Path to data', default="")
 
     parser.add_argument('--model', type=str,
-                        help='Model Name: bprgru', default="drcf2")
+                        help='Model Name: bprgru', default="mr")
 
     parser.add_argument('--d', type=int, default=32,
                         help='Dimension')
@@ -58,9 +59,9 @@ if __name__ == '__main__':
 
 
     print("Reading......")
-    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=100)
-    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=100)
-    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=100)
+    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=1000)
+    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=1000)
+    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=1000)
     print("Finish")
     # metadata = pd.read_csv("data/item_metadata.csv")
 
@@ -93,6 +94,8 @@ if __name__ == '__main__':
         ranker = BPRGRU(dim, maxlen, item_index, negSampleMode)
     elif modelName == "drcf2":
         ranker = DRCF(dim, maxlen, item_index, negSampleMode)
+    elif modelName == "mr":
+        ranker = MultiRanker(dim, maxlen, item_index)
 
 
 

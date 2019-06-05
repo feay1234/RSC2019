@@ -99,7 +99,7 @@ class BPRGRU():
         for city, rows in tqdm(df.groupby("city")):
             for idx, row in rows.iterrows():
                 impressions = [self.item_index[int(i)] for i in row['impressions'].split("|")]
-                prices = [int(i) for i in row['prices'].split("|")]
+                # prices = [int(i) for i in row['prices'].split("|")]
 
                 gtItem = self.item_index[int(row['reference'])]
                 pos.append(gtItem)
