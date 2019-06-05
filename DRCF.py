@@ -1,7 +1,7 @@
 import sys;
 
 from keras.layers import Input, Embedding, Flatten, GRU, Dot, Concatenate, Subtract, Activation, SimpleRNN, Multiply, \
-    Dense
+    Dense, Reshape
 
 from keras.models import Model
 
@@ -29,32 +29,33 @@ class DRCF(BPRGRU):
         itemMulEmbedding = Embedding(len(item_index)+1, self.dim)
         itemMLPEmbedding = Embedding(len(item_index)+1, self.dim)
 
-        itemSeqDotEmbedding = Embedding(len(item_index)+1, self.dim, mask_zero=True)
-        itemSeqMulEmbedding = Embedding(len(item_index)+1, self.dim, mask_zero=True)
-        itemSeqMLPEmbedding = Embedding(len(item_index)+1, self.dim, mask_zero=True)
+        # itemSeqDotEmbedding = Embedding(len(item_index)+1, self.dim, mask_zero=True)
+        # itemSeqMulEmbedding = Embedding(len(item_index)+1, self.dim, mask_zero=True)
+        # itemSeqMLPEmbedding = Embedding(len(item_index)+1, self.dim, mask_zero=True)
 
         rnnDot = SimpleRNN(self.dim, unroll=True)
         rnnMul = SimpleRNN(self.dim, unroll=True)
         rnnMLP = SimpleRNN(self.dim, unroll=True)
 
-        uDotEmb = rnnDot(itemSeqDotEmbedding(seqInput))
+        uDotEmb = rnnDot(itemDotEmbedding(seqInput))
         pDotEmb = itemDotEmbedding(posInput)
         nDotEmb = itemDotEmbedding(negInput)
 
-        uMulEmb = rnnMul(itemSeqMulEmbedding(seqInput))
+        uMulEmb = rnnMul(itemMulEmbedding(seqInput))
         pMulEmb = itemMulEmbedding(posInput)
         nMulEmb = itemMulEmbedding(negInput)
 
-        uMLPEmb = rnnMLP(itemSeqMLPEmbedding(seqInput))
+        uMLPEmb = rnnMLP(itemMLPEmbedding(seqInput))
         pMLPEmb = Flatten()(itemMLPEmbedding(posInput))
         nMLPEmb = Flatten()(itemMLPEmbedding(negInput))
-
 
         pDot = Dot(axes = -1)([uDotEmb, pDotEmb])
         nDot = Dot(axes = -1)([uDotEmb, nDotEmb])
 
         pMul = Flatten()(Multiply()([uMulEmb, pMulEmb]))
         nMul = Flatten()(Multiply()([uMulEmb, nMulEmb]))
+        # pMul = Multiply()([uMulEmb, pMulEmb])
+        # nMul = Multiply()([uMulEmb, nMulEmb])
 
         pMLP = Concatenate()([uMLPEmb, pMLPEmb])
         nMLP = Concatenate()([uMLPEmb, nMLPEmb])

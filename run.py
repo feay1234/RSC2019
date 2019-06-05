@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--path', type=str, help='Path to data', default="")
 
     parser.add_argument('--model', type=str,
-                        help='Model Name: bprgru', default="drcf")
+                        help='Model Name: bprgru', default="drcf2")
 
     parser.add_argument('--d', type=int, default=32,
                         help='Dimension')
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     # modelName = "bprgru"
     if modelName == "bprgru":
         ranker = BPRGRU(dim, maxlen, item_index, negSampleMode)
-    elif modelName == "drcf":
+    elif modelName == "drcf2":
         ranker = DRCF(dim, maxlen, item_index, negSampleMode)
 
 
