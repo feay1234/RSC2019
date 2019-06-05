@@ -6,6 +6,7 @@ from keras.preprocessing.sequence import pad_sequences
 from BPRGRU import BPRGRU, identity_loss, init_normal
 import argparse
 from time import time
+from datetime import datetime
 
 #################### Arguments ####################
 from DRCF import DRCF
@@ -57,9 +58,9 @@ if __name__ == '__main__':
 
 
     print("Reading......")
-    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=10000)
-    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=10000)
-    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=10000)
+    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=100)
+    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=100)
+    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=100)
     print("Finish")
     # metadata = pd.read_csv("data/item_metadata.csv")
 
@@ -95,7 +96,7 @@ if __name__ == '__main__':
 
 
 
-    runName = "%s_d%d_ml%d_%s" % (modelName, dim, maxlen, negSampleMode)
+    runName = "%s_d%d_ml%d_%s_%s" % (modelName, dim, maxlen, negSampleMode, datetime.now().strftime("%m-%d-%Y_%H-%M-%S"))
 
 
 
