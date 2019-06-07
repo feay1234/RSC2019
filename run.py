@@ -59,9 +59,9 @@ if __name__ == '__main__':
 
 
     print("Reading......")
-    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=1000)
-    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=1000)
-    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=1000)
+    df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=10000)
+    df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=10000)
+    df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=10000)
     print("Finish")
     # metadata = pd.read_csv("data/item_metadata.csv")
 
@@ -139,7 +139,11 @@ if __name__ == '__main__':
 
     # load the best model
     # ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss, 'init_normal': init_normal})
-    ranker.model = load_model(path+'h5/%s.h5' % runName)
+    if modelName == "mr":
+        ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects = {'identity_loss': ranker.identity_loss, 'getDotDifference': ranker.getDotDifference, 'getDotDifferenceShape': ranker.getDotDifferenceShape})
+
+    else:
+        ranker.model = load_model(path+'h5/%s.h5' % runName)
 
 
     # Generate submission file
