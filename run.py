@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
         print(output)
 
-        if bestNDCG < ndcg:
+        if bestNDCG <= ndcg:
             bestNDCG = ndcg
             ranker.model.save(path+'h5/%s.h5' % runName)
         else:
