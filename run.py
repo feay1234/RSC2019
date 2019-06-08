@@ -27,10 +27,10 @@ def parse_args():
     parser.add_argument('--d', type=int, default=20,
                         help='Dimension')
 
-    parser.add_argument('--ml', type=int, default=3,
+    parser.add_argument('--ml', type=int, default=10,
                         help='Maximum lenght of user sequence')
 
-    parser.add_argument('--epochs', type=int, default=100,
+    parser.add_argument('--epochs', type=int, default=2,
                         help='Epoch number')
 
     parser.add_argument('--small', type=int, default=1,
@@ -54,6 +54,7 @@ if __name__ == '__main__':
     small = True if args.small == 1 else False
     negSampleMode = args.ns
 
+
     fullData = True if modelName in ["am"] else False
     # small = False
     # negSampleMode = "nce"
@@ -62,35 +63,40 @@ if __name__ == '__main__':
     if not fullData:
 
         cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
-        df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=10000)
-        df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=10000)
-        df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=10000)
+        df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=1000)
+        df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=1000)
+        df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=1000)
         # metadata = pd.read_csv("data/item_metadata.csv")
 
         # Indexing all items
         item_index = indexing_items(df, df_val, df_test)
     else:
 
-        df = pd.read_csv(path+"data/train.csv") if not small else pd.read_csv(path+"data/train.csv", nrows=10000)
+        df = pd.read_csv(path+"data/train.csv") if not small else pd.read_csv(path+"data/train.csv", nrows=1000)
         df = df[~df["reference"].isin(['unknown'])]
-        # df_val = pd.read_csv(path + "data/train.csv") if not small else pd.read_csv(path + "data/train.csv", nrows=10000)
-        df_test = pd.read_csv(path + "data/test.csv") if not small else pd.read_csv(path + "data/test.csv", nrows=10000)
+        df = df[df['reference'].str.isnumeric()]
+        df_test = pd.read_csv(path + "data/test.csv") if not small else pd.read_csv(path + "data/test.csv", nrows=1000)
+        df_test = df_test[~df_test["reference"].isin(['unknown'])]
 
         remove_actions = ['filter selection', 'change of sort order', 'search for poi', 'search for destination']
         df = df[~df.action_type.isin(remove_actions)]
         df_test = df_test[~df_test.action_type.isin(remove_actions)]
-
-        # categorise context feature
-        # df['action_id'] = df['action_type'].astype('category').cat.codes + 1
-        # df['city_id'] = df['city'].astype('category').cat.codes + 1
+        if not small:
+            # drop error rows where clickout == None are not the last action
+            df_test = df_test.drop([794770, 2255685])
+        df_val = df_test[df_test.groupby("session_id").cumcount(ascending=False) > 0]
 
         indexes = indexing_item_context(df, df_test)
 
+        maxlen = 16
+        # save time
+        # maxlen = int(np.mean(df.groupby("session_id").apply(lambda x: len(x))))
 
 
-    # index zero is for masking
 
-    # modelName = "bprgru"
+
+
+
     if modelName == "bprgru":
         ranker = BPRGRU(dim, maxlen, item_index, negSampleMode)
     elif modelName == "drcf2":
@@ -105,27 +111,61 @@ if __name__ == '__main__':
 
     runName = "%s_d%d_ml%d_%s_%s" % (modelName, dim, maxlen, negSampleMode, datetime.now().strftime("%m-%d-%Y_%H-%M-%S"))
 
-    ranker.generate_train_data(df)
-
     # Start Training
 
     metric = pyltr.metrics.NDCG(k=25)
+    bestNDCG = 0
 
     if modelName in ["am"]:
 
+        valSession, x_val, y_val = ranker.generate_data(df_val, "val")
+        testSession, testItemId, x_test = ranker.generate_data(df_test, "test")
+
+
+
         for epoch in range(epochs):
 
-            x_train, y_train = ranker.generate_train_data(df)
-            history = ranker.model.fit(x_train, y_train, batch_size=256, verbose=1, epochs=1, validation_split=0.2, shuffle=True)
-            pred = ranker.model.predict(x_train)
-            print(pred)
-            break
+            t1 = time()
+            x_train, y_train = ranker.generate_data(df, "train")
+            t2 = time()
+            hist = ranker.model.fit(x_train, y_train, batch_size=256, verbose=1, epochs=1, shuffle=True)
+            loss = hist.history['loss'][0]
+            t3 = time()
+            pred = ranker.model.predict(x_val).flatten().tolist()
+            ndcg = metric.calc_mean(valSession, y_val, pred)
+
+            output = 'Iteration %d, data[%.1f s], train[%.1f s], loss = %.4f, NDCG = %.4f, test[%.1f s]' % (
+                epoch, t2 - t1, t3-t2, loss, ndcg, time() - t3)
+
+            with open(path+"out/%s.out" % runName, "a") as myfile:
+                myfile.write(output+"\n")
+
+            print(output)
+
+            if bestNDCG <= ndcg:
+                bestNDCG = ndcg
+                ranker.model.save(path+'h5/%s.h5' % runName)
+            else:
+                print("Early Stopping")
+                break
+
+        pred = ranker.model.predict(x_test).flatten().tolist()
+
+        df_rank = pd.DataFrame.from_dict({"session_id":testSession, "item": testItemId, "score":pred})
+        _df_rank = df_rank.groupby("session_id").tail(1)
+        df_rank = df_rank.groupby("session_id").apply(lambda x: x.sort_values(["score"], ascending = False)).reset_index(drop=True)
+        df_rank = df_rank.groupby(['session_id'])['item'].apply(list)
+        df_rank = df_rank.apply(lambda x : ' '.join(x))
+        _df_rank["item_recommendations"] = df_rank.values
+        _df_test = df_test.groupby("session_id").tail(1)[df_test.action_type == "clickout item"][df_test.reference.isna()]
+        _df_rank = pd.merge(_df_rank, _df_test, on="session_id")
+        _df_rank[['user_id','session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(path+'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
+
 
     else:
         valSession, x_val, y_val = ranker.generate_test_data(df_val)
         testSession, testItemId, x_test = ranker.generate_test_data(df_test, isValidate=False)
 
-        bestNDCG = 0
 
 
         for epoch in range(epochs):
@@ -161,18 +201,19 @@ if __name__ == '__main__':
             ranker.model = load_model(path+'h5/%s.h5' % runName)
 
 
-        # Generate submission file
-
         pred = ranker.get_score(x_test)[0].flatten()
+
+        # Generate submission file
 
         df_rank = pd.DataFrame.from_dict({"id":testSession, "item": testItemId, "score":pred})
         df_rank = df_rank.groupby("id").apply(lambda x: x.sort_values(["score"], ascending = False)).reset_index(drop=True)
         df_rank = df_rank.groupby(['id'])['item'].apply(list)
         df_rank = df_rank.apply(lambda x : ' '.join(x))
+        print(df_rank.values)
         df_test["item_recommendations"] = df_rank.values
         df_test[['user_id','session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(path+'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
 
 
-        total_time = (time() - start ) / 3600
-        with open(path + "out/%s.out" % runName, "a") as myfile:
-            myfile.write("Total time: %.2f h" % total_time + "\n")
+    total_time = (time() - start ) / 3600
+    with open(path + "out/%s.out" % runName, "a") as myfile:
+        myfile.write("Total time: %.2f h" % total_time + "\n")

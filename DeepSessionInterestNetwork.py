@@ -46,21 +46,30 @@ class AttentionModel():
 
         return action, city, position, price
 
-    def generate_train_data(self, df):
+    def generate_data(self, df, mode="train"):
 
-        cand_items, cand_actions, cand_cities, cand_positions, cand_prices, seq_items, seq_cities, seq_actions, seq_prices, seq_positions, labels = [], [], [], [], [], [], [], [], [], [], []
+        sessions, itemIds, cand_items, cand_actions, cand_cities, cand_positions, cand_prices, seq_items, seq_cities, seq_actions, seq_prices, seq_positions, labels = [], [], [], [], [], [], [], [], [], [], [], [], []
         for idx, rows in df.groupby("session_id"):
             seq_item, seq_city, seq_action, seq_price, seq_position = [], [], [], [], []
             lastRow = rows.iloc[-1]
+
             if lastRow["action_type"] != "clickout item":
                 continue
+
+            if mode == "val":
+                if type(lastRow['reference']) == float:
+                    continue
+            elif mode == "test":
+                if type(lastRow['reference']) != float:
+                    continue
 
             histRows = rows.iloc[:-1]
 
             impressions = [self.item_index[int(i)] for i in lastRow['impressions'].split("|")]
             prices = [int(i) for i in lastRow['prices'].split("|")]
-            gtItem = self.item_index[int(lastRow['reference'])]
-            action, city, position, price = self.get_features(gtItem, impressions, prices, lastRow)
+            if mode == "train":
+                gtItem = self.item_index[int(lastRow['reference'])]
+                action, city, position, price = self.get_features(gtItem, impressions, prices, lastRow)
 
             if len(histRows) > 0:
                 for _i, _r in histRows.iterrows():
@@ -74,35 +83,63 @@ class AttentionModel():
                     seq_action.append(_action)
                     seq_price.append(_price)
 
-            cand_items.append(gtItem)
-            cand_actions.append(action)
-            cand_cities.append(city)
-            cand_positions.append(position)
-            cand_prices.append(price)
+            if mode == "train":
 
-            seq_items.append(seq_item)
-            seq_positions.append(seq_position)
-            seq_cities.append(seq_city)
-            seq_actions.append(seq_action)
-            seq_prices.append(seq_price)
-            labels.append(1)
+                cand_items.append(gtItem)
+                cand_actions.append(action)
+                cand_cities.append(city)
+                cand_positions.append(position)
+                cand_prices.append(price)
 
-            # sample negative instance from impressions
-            pool = impressions if len(impressions) > 1 else np.arange(len(self.item_index)).tolist()
-            sample = negative_sample(pool, gtItem)
-            action, city, position, price = self.get_features(sample, impressions, prices, lastRow)
+                seq_items.append(seq_item)
+                seq_positions.append(seq_position)
+                seq_cities.append(seq_city)
+                seq_actions.append(seq_action)
+                seq_prices.append(seq_price)
+                labels.append(1)
 
-            cand_items.append(sample)
-            cand_actions.append(action)
-            cand_cities.append(city)
-            cand_positions.append(position)
-            cand_prices.append(price)
-            seq_items.append(seq_item)
-            seq_positions.append(seq_position)
-            seq_cities.append(seq_city)
-            seq_actions.append(seq_action)
-            seq_prices.append(seq_price)
-            labels.append(0)
+                # sample negative instance from impressions
+                pool = impressions if len(impressions) > 1 else np.arange(len(self.item_index)).tolist()
+                sample = negative_sample(pool, gtItem)
+                action, city, position, price = self.get_features(sample, impressions, prices, lastRow)
+
+                cand_items.append(sample)
+                cand_actions.append(action)
+                cand_cities.append(city)
+                cand_positions.append(position)
+                cand_prices.append(price)
+                seq_items.append(seq_item)
+                seq_positions.append(seq_position)
+                seq_cities.append(seq_city)
+                seq_actions.append(seq_action)
+                seq_prices.append(seq_price)
+                labels.append(0)
+
+            else:
+                _action = self.action_index[lastRow['action_type']]
+                _city = self.city_index[lastRow['city']]
+                if mode == "val":
+                    gtItem = self.item_index[int(lastRow['reference'])]
+
+                for _position, (_item, _price) in enumerate(zip(impressions, prices)):
+                    cand_items.append(_item)
+                    cand_actions.append(_action)
+                    cand_cities.append(_city)
+                    cand_positions.append(_position+1)
+                    cand_prices.append(_price)
+
+                    seq_items.append(seq_item)
+                    seq_positions.append(seq_position)
+                    seq_cities.append(seq_city)
+                    seq_actions.append(seq_action)
+                    seq_prices.append(seq_price)
+
+                    if mode == "val":
+                        labels.append(1 if _item == gtItem else 0)
+
+                sessions.extend([lastRow['session_id']]*len(impressions))
+                itemIds.extend([i for i in lastRow['impressions'].split("|")])
+
 
         cand_items = np.array(cand_items)
         cand_positions = np.array(cand_positions)
@@ -115,6 +152,7 @@ class AttentionModel():
         seq_actions = pad_sequences(seq_actions, maxlen=self.maxlen)
         seq_prices = pad_sequences(seq_prices, maxlen=self.maxlen)
         labels = np.array(labels)
+
 
         feature_dict = {'item': cand_items, 'position': cand_positions, 'city': cand_cities, 'action': cand_actions,
                         'price': cand_prices,
@@ -132,4 +170,10 @@ class AttentionModel():
         # for i in [cand_items, cand_positions, cand_cities, cand_actions, cand_prices, seq_items, seq_positions, seq_cities, seq_actions, seq_prices, labels]:
         #     print(i.shape)
 
-        return x, y
+        if mode == "train":
+            return x, y
+        elif mode == "val":
+            return sessions, x, y
+        else:
+            return sessions, itemIds, x
+

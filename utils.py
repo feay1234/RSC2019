@@ -42,6 +42,7 @@ def indexing_item_context(df, df_test):
         allItems.update([int(i) for i in i.split("|")])
     for i in df_test[~df_test['impressions'].isna()]['impressions']:
         allItems.update([int(i) for i in i.split("|")])
+    allItems.update(set(df_test[~df_test.reference.isna()]['reference'].unique()))
 
     allCities = set(df['city'].unique())
     allCities.update(set(df_test['city'].unique()))
