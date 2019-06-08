@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--ml', type=int, default=10,
                         help='Maximum lenght of user sequence')
 
-    parser.add_argument('--epochs', type=int, default=2,
+    parser.add_argument('--epochs', type=int, default=100,
                         help='Epoch number')
 
     parser.add_argument('--small', type=int, default=1,
