@@ -35,23 +35,27 @@ def indexing_items(df, df_val, df_test):
 
 
 # for .csv files
-def indexing_item_context(df, df_test):
+def indexing_item_context(df, df_val, df_test):
 
-    allItems = set(df['reference'].unique())
+    allItems = set([int(i) for i in df['reference'].unique()])
     for i in df[~df['impressions'].isna()]['impressions']:
+        allItems.update([int(i) for i in i.split("|")])
+    for i in df_val[~df_val['impressions'].isna()]['impressions']:
         allItems.update([int(i) for i in i.split("|")])
     for i in df_test[~df_test['impressions'].isna()]['impressions']:
         allItems.update([int(i) for i in i.split("|")])
-    allItems.update(set(df_test[~df_test.reference.isna()]['reference'].unique()))
+
+    allItems.update(set([int(i) for i in df_val[~df_val.reference.isna()]['reference'].unique()]))
+    allItems.update(set([int(i) for i in df_test[~df_test.reference.isna()]['reference'].unique()]))
 
     allCities = set(df['city'].unique())
     allCities.update(set(df_test['city'].unique()))
 
     allActions = set(df['action_type'].unique())
 
-    # index zero is for masking
     item_index = {int(i): idx + 1 for idx, i in enumerate(allItems)}
     city_index = {i : idx + 1 for idx, i in enumerate(allCities)}
     action_index = {i : idx + 1 for idx, i in enumerate(allActions)}
+
 
     return item_index, city_index, action_index

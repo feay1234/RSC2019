@@ -85,12 +85,6 @@ class AttentionModel():
 
             if mode == "train":
 
-                cand_items.append(gtItem)
-                cand_actions.append(action)
-                cand_cities.append(city)
-                cand_positions.append(position)
-                cand_prices.append(price)
-
                 seq_items.append(seq_item)
                 seq_positions.append(seq_position)
                 seq_cities.append(seq_city)
