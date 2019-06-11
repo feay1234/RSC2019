@@ -113,7 +113,7 @@ if __name__ == '__main__':
         ranker = AttentionModel(dim, maxlen, indexes)
 
     elif modelName == "crnn":
-        item_index, city_index, action_index = indexes
+        item_index, action_index = indexes
         ranker = ContextRNN(dim, maxlen, item_index, action_index, mode)
 
 

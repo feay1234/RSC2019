@@ -48,14 +48,14 @@ def indexing_item_context(df, df_val, df_test):
     allItems.update(set([int(i) for i in df_val[~df_val.reference.isna()]['reference'].unique()]))
     allItems.update(set([int(i) for i in df_test[~df_test.reference.isna()]['reference'].unique()]))
 
-    allCities = set(df['city'].unique())
-    allCities.update(set(df_test['city'].unique()))
+    # allCities = set(df['city'].unique())
+    # allCities.update(set(df_test['city'].unique()))
 
     allActions = set(df['action_type'].unique())
 
     item_index = {int(i): idx + 1 for idx, i in enumerate(allItems)}
-    city_index = {i : idx + 1 for idx, i in enumerate(allCities)}
+    # city_index = {i : idx + 1 for idx, i in enumerate(allCities)}
     action_index = {i : idx + 1 for idx, i in enumerate(allActions)}
 
 
-    return item_index, city_index, action_index
+    return item_index, action_index

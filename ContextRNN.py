@@ -27,7 +27,7 @@ class ContextRNN():
 
         itemEmbedding = Embedding(len(item_index) + 1, self.dim, mask_zero=True)
         actionEmbedding = Embedding(len(action_index) + 1, self.dim, mask_zero=True)
-        positionEmbedding = Embedding(26 + 1, self.dim, mask_zero=True)
+        positionEmbedding = Embedding(25 + 1, self.dim, mask_zero=True)
 
         piEmb = itemEmbedding(p_itemInput)
         niEmb = itemEmbedding(n_itemInput)
