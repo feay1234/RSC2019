@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument('--path', type=str, help='Path to data', default="")
 
     parser.add_argument('--model', type=str,
-                        help='Model Name: bprgru', default="crnn")
+                        help='Model Name: bprgru', default="crnnt")
 
     parser.add_argument('--d', type=int, default=10,
                         help='Dimension')
@@ -43,9 +43,6 @@ def parse_args():
     parser.add_argument('--mode', type=int, default="1",
                         help='Model Mode : ')
 
-    parser.add_argument('--tmode', type=int, default="1",
-                        help='Model Time Mode : ')
-
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -61,12 +58,8 @@ if __name__ == '__main__':
     small = True if args.small == 1 else False
     negSampleMode = args.ns
     mode = args.mode
-    timeMode = args.tmode
-    # mode = 2
-    # timeMode = 2
 
-
-    fullData = True if modelName in ["am", "crnn"] else False
+    fullData = True if modelName in ["am", "crnn", "crnnt"] else False
     # small = False
     # negSampleMode = "nce"
 
@@ -119,7 +112,11 @@ if __name__ == '__main__':
 
     elif modelName == "crnn":
         item_index, action_index = indexes
-        ranker = ContextRNN(dim, maxlen, item_index, action_index, mode, timeMode)
+        ranker = ContextRNN(dim, maxlen, item_index, action_index, mode, 1)
+
+    elif modelName == "crnnt":
+        item_index, action_index = indexes
+        ranker = ContextRNN(dim, maxlen, item_index, action_index, mode, 2)
 
 
 
@@ -130,7 +127,7 @@ if __name__ == '__main__':
     metric = pyltr.metrics.NDCG(k=25)
     bestNDCG = 0
 
-    if modelName in ["am", "crnn"]:
+    if modelName in ["am", "crnn", "crnnt"]:
 
         valSession, x_val, y_val = ranker.generate_data(df_val, "val")
         testSession, testItemId, x_test = ranker.generate_data(df_test, "test")
