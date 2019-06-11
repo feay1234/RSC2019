@@ -14,20 +14,20 @@ class ContextRNN():
         self.item_index = item_index
         self.action_index = action_index
         self.positionMode = positionMode
-        # print(len(item_index))
 
         p_itemInput = Input(shape=(self.maxlen,))
         p_actionInput = Input(shape=(self.maxlen,))
-        p_poisitionInput = Input(shape=(self.maxlen,1,))
+        p_poisitionInput = Input(shape=(self.maxlen,1,)) if self.positionMode == 1 else Input(shape=(self.maxlen,))
         p_priceInput = Input(shape=(self.maxlen,1,))
 
         n_itemInput = Input(shape=(self.maxlen,))
         n_actionInput = Input(shape=(self.maxlen,))
-        n_poisitionInput = Input(shape=(self.maxlen,1,))
+        n_poisitionInput = Input(shape=(self.maxlen,1,)) if self.positionMode == 1 else Input(shape=(self.maxlen,))
         n_priceInput = Input(shape=(self.maxlen,1,))
 
         itemEmbedding = Embedding(len(item_index) + 1, self.dim, mask_zero=True)
         actionEmbedding = Embedding(len(action_index) + 1, self.dim, mask_zero=True)
+        positionEmbedding = Embedding(26 + 1, self.dim, mask_zero=True)
 
         piEmb = itemEmbedding(p_itemInput)
         niEmb = itemEmbedding(n_itemInput)
@@ -37,9 +37,15 @@ class ContextRNN():
         # npoEmb = K.expand_dims(n_poisitionInput, axis=-1)
         # pprEmb = K.expand_dims(p_priceInput, axis=-1)
         # nprEmb = K.expand_dims(n_priceInput, axis=-1)
+        if self.positionMode == 1:
+            p_features = Concatenate()([piEmb, paEmb, p_poisitionInput, p_priceInput])
+            n_features = Concatenate()([niEmb, naEmb, n_poisitionInput, n_priceInput])
+        else:
+            ppEmb = positionEmbedding(p_poisitionInput)
+            npEmb = positionEmbedding(n_poisitionInput)
+            p_features = Concatenate()([piEmb, paEmb, ppEmb, p_priceInput])
+            n_features = Concatenate()([niEmb, naEmb, npEmb, n_priceInput])
 
-        p_features = Concatenate()([piEmb, paEmb, p_poisitionInput, p_priceInput])
-        n_features = Concatenate()([niEmb, naEmb, n_poisitionInput, n_priceInput])
 
         rnn = SimpleRNN(self.dim, unroll=True)
 
@@ -173,14 +179,17 @@ class ContextRNN():
         nseq_actions = pad_sequences(nseq_actions, maxlen=self.maxlen)
         nseq_prices = pad_sequences(nseq_prices, maxlen=self.maxlen)
 
-        seq_positions = np.expand_dims(seq_positions, axis=-1)
+        if self.positionMode == 1:
+            seq_positions = np.expand_dims(seq_positions, axis=-1)
+            nseq_positions = np.expand_dims(nseq_positions, axis=-1)
         seq_prices = np.expand_dims(seq_prices, axis=-1)
-        nseq_positions = np.expand_dims(nseq_positions, axis=-1)
         nseq_prices = np.expand_dims(nseq_prices, axis=-1)
 
         if mode == "train":
             x = [seq_items, seq_actions, seq_positions, seq_prices, nseq_items, nseq_actions, nseq_positions,
                  nseq_prices]
+            # for i in x:
+            #     print(i.shape)
             y = np.ones(seq_items.shape[0])
             return x, y
         elif mode == "val":

@@ -40,6 +40,9 @@ def parse_args():
     parser.add_argument('--ns', type=str, default="city",
                         help='Negative Sample Mode : ')
 
+    parser.add_argument('--mode', type=str, default="1",
+                        help='Model Mode : ')
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -54,6 +57,8 @@ if __name__ == '__main__':
     epochs = args.epochs
     small = True if args.small == 1 else False
     negSampleMode = args.ns
+    mode = args.mode
+    mode = 2
 
 
     fullData = True if modelName in ["am", "crnn"] else False
@@ -109,11 +114,11 @@ if __name__ == '__main__':
 
     elif modelName == "crnn":
         item_index, city_index, action_index = indexes
-        ranker = ContextRNN(dim, maxlen, item_index, action_index)
+        ranker = ContextRNN(dim, maxlen, item_index, action_index, mode)
 
 
 
-    runName = "%s_d%d_ml%d_%s_%s" % (modelName, dim, maxlen, negSampleMode, datetime.now().strftime("%m-%d-%Y_%H-%M-%S"))
+    runName = "%s_d%d_ml%d_%s_m%d_%s" % (modelName, dim, maxlen, negSampleMode, mode, datetime.now().strftime("%m-%d-%Y_%H-%M-%S"))
 
     # Start Training
 
