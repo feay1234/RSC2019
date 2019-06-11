@@ -10,6 +10,7 @@ from datetime import datetime
 
 #################### Arguments ####################
 from ContextRNN import ContextRNN
+from ContextSRNN import ContextSeqRNN
 from DRCF import DRCF
 from DeepSessionInterestNetwork import AttentionModel
 from MultiRanker import MultiRanker
@@ -23,7 +24,7 @@ def parse_args():
     parser.add_argument('--path', type=str, help='Path to data', default="")
 
     parser.add_argument('--model', type=str,
-                        help='Model Name: bprgru', default="crnnt")
+                        help='Model Name: bprgru', default="csrnn")
 
     parser.add_argument('--d', type=int, default=10,
                         help='Dimension')
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     negSampleMode = args.ns
     mode = args.mode
 
-    fullData = True if modelName in ["am", "crnn", "crnnt"] else False
+    fullData = True if modelName in ["am", "crnn", "crnnt", "csrnn"] else False
     # small = False
     # negSampleMode = "nce"
 
@@ -114,6 +115,10 @@ if __name__ == '__main__':
         item_index, action_index = indexes
         ranker = ContextRNN(dim, maxlen, item_index, action_index, mode, 1)
 
+    elif modelName == "csrnn":
+        item_index, action_index = indexes
+        ranker = ContextSeqRNN(dim, maxlen, item_index, action_index)
+
     elif modelName == "crnnt":
         item_index, action_index = indexes
         ranker = ContextRNN(dim, maxlen, item_index, action_index, mode, 2)
@@ -127,7 +132,7 @@ if __name__ == '__main__':
     metric = pyltr.metrics.NDCG(k=25)
     bestNDCG = 0
 
-    if modelName in ["am", "crnn", "crnnt"]:
+    if modelName in ["am", "crnn", "crnnt", "csrnn"]:
 
         valSession, x_val, y_val = ranker.generate_data(df_val, "val")
         testSession, testItemId, x_test = ranker.generate_data(df_test, "test")
@@ -139,7 +144,7 @@ if __name__ == '__main__':
             t1 = time()
             x_train, y_train = ranker.generate_data(df, "train")
             t2 = time()
-            hist = ranker.model.fit(x_train, y_train, batch_size=256, verbose=1, epochs=1, shuffle=True)
+            hist = ranker.model.fit(x_train, y_train, batch_size=256, verbose=0, epochs=1, shuffle=True)
             loss = hist.history['loss'][0]
             t3 = time()
             if modelName == "am":
