@@ -43,6 +43,9 @@ def parse_args():
     parser.add_argument('--mode', type=str, default="1",
                         help='Model Mode : ')
 
+    parser.add_argument('--tmode', type=str, default="1",
+                        help='Model Time Mode : ')
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -58,7 +61,9 @@ if __name__ == '__main__':
     small = True if args.small == 1 else False
     negSampleMode = args.ns
     mode = args.mode
-    mode = 2
+    timeMode = args.tmode
+    # mode = 2
+    # timeMode = 1
 
 
     fullData = True if modelName in ["am", "crnn"] else False
@@ -114,7 +119,7 @@ if __name__ == '__main__':
 
     elif modelName == "crnn":
         item_index, action_index = indexes
-        ranker = ContextRNN(dim, maxlen, item_index, action_index, mode)
+        ranker = ContextRNN(dim, maxlen, item_index, action_index, mode, timeMode)
 
 
 
