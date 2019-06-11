@@ -40,10 +40,10 @@ def parse_args():
     parser.add_argument('--ns', type=str, default="city",
                         help='Negative Sample Mode : ')
 
-    parser.add_argument('--mode', type=str, default="1",
+    parser.add_argument('--mode', type=int, default="1",
                         help='Model Mode : ')
 
-    parser.add_argument('--tmode', type=str, default="1",
+    parser.add_argument('--tmode', type=int, default="1",
                         help='Model Time Mode : ')
 
     return parser.parse_args()
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     mode = args.mode
     timeMode = args.tmode
     # mode = 2
-    # timeMode = 1
+    # timeMode = 2
 
 
     fullData = True if modelName in ["am", "crnn"] else False
