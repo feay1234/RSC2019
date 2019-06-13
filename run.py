@@ -60,6 +60,9 @@ if __name__ == '__main__':
     negSampleMode = args.ns
     mode = args.mode
 
+    epochs = 1
+    small = False
+
     fullData = True if modelName in ["am", "crnn", "crnnt", "csrnn"] else False
     # small = False
     # negSampleMode = "nce"
@@ -144,7 +147,7 @@ if __name__ == '__main__':
             t1 = time()
             x_train, y_train = ranker.generate_data(df, "train")
             t2 = time()
-            hist = ranker.model.fit(x_train, y_train, batch_size=256, verbose=0, epochs=1, shuffle=True)
+            hist = ranker.model.fit(x_train, y_train, batch_size=256, verbose=1, epochs=1, shuffle=True)
             loss = hist.history['loss'][0]
             t3 = time()
             if modelName == "am":
@@ -195,7 +198,7 @@ if __name__ == '__main__':
             t1 = time()
             x_train, y_train = ranker.generate_train_data(df)
             t2 = time()
-            hist = ranker.model.fit(x_train, y_train, batch_size=256, epochs=1, verbose=0, shuffle=True)
+            hist = ranker.model.fit(x_train, y_train, batch_size=256, epochs=0, verbose=1, shuffle=True)
             loss = hist.history['loss'][0]
             t3 = time()
             pred = ranker.get_score(x_val)[0].flatten()

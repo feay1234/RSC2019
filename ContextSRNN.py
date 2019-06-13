@@ -4,6 +4,7 @@ from keras import Model
 from keras.layers import Input, Embedding, Subtract, Activation, Concatenate, Dense, SimpleRNN
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
+from tqdm import tqdm
 
 from ContextRNN import ContextRNN
 from utils import negative_sample
@@ -21,7 +22,7 @@ class ContextSeqRNN(ContextRNN):
         seq_times, seq_steps = [], []
         nseq_times, nseq_steps = [], []
 
-        for idx, rows in df.groupby("session_id"):
+        for idx, rows in tqdm(df.groupby("session_id")):
             seq_item, seq_action, seq_price, seq_position, seq_time, seq_step = [], [], [], [], [], []
             lastRow = rows.iloc[-1]
 
