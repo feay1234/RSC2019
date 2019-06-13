@@ -18,7 +18,6 @@ from utils import indexing_items, indexing_item_context
 
 
 def parse_args():
-
     parser = argparse.ArgumentParser(description="Run RecSys Challenge 2019 Experiments")
 
     parser.add_argument('--path', type=str, help='Path to data', default="")
@@ -46,6 +45,7 @@ def parse_args():
 
     return parser.parse_args()
 
+
 if __name__ == '__main__':
     start = time()
 
@@ -60,8 +60,8 @@ if __name__ == '__main__':
     negSampleMode = args.ns
     mode = args.mode
 
-    epochs = 1
-    small = False
+    # epochs = 2
+    # small = True
 
     fullData = True if modelName in ["am", "crnn", "crnnt", "csrnn"] else False
     # small = False
@@ -70,16 +70,20 @@ if __name__ == '__main__':
     print("Reading......")
     if not fullData:
 
-        cols=["user_id","session_id","timestamp","step","action_type","reference","platform","city","device","current_filters","impressions","prices","interactions"]
-        df = pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/train.groupby.csv", sep="\t", names=cols, nrows=10000)
-        df_val = pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/val.groupby.csv", sep="\t", names=cols, nrows=10000)
-        df_test = pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(path+"data/test.groupby.csv", sep="\t", names=cols, nrows=10000)
+        cols = ["user_id", "session_id", "timestamp", "step", "action_type", "reference", "platform", "city", "device",
+                "current_filters", "impressions", "prices", "interactions"]
+        df = pd.read_csv(path + "data/train.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(
+            path + "data/train.groupby.csv", sep="\t", names=cols, nrows=10000)
+        df_val = pd.read_csv(path + "data/val.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(
+            path + "data/val.groupby.csv", sep="\t", names=cols, nrows=10000)
+        df_test = pd.read_csv(path + "data/test.groupby.csv", sep="\t", names=cols) if not small else pd.read_csv(
+            path + "data/test.groupby.csv", sep="\t", names=cols, nrows=10000)
         # metadata = pd.read_csv("data/item_metadata.csv")
 
         # Indexing all items
         item_index = indexing_items(df, df_val, df_test)
     else:
-        df = pd.read_csv(path+"data/train.csv") if not small else pd.read_csv(path+"data/train.csv", nrows=1000)
+        df = pd.read_csv(path + "data/train.csv") if not small else pd.read_csv(path + "data/train.csv", nrows=1000)
         df = df[~df["reference"].isin(['unknown'])]
         df = df[df['reference'].str.isnumeric()]
         df_test = pd.read_csv(path + "data/test.csv") if not small else pd.read_csv(path + "data/test.csv", nrows=1000)
@@ -98,11 +102,6 @@ if __name__ == '__main__':
         # maxlen = 16
         # save time
         # maxlen = int(np.mean(df.groupby("session_id").apply(lambda x: len(x))))
-
-
-
-
-
 
     if modelName == "bprgru":
         ranker = BPRGRU(dim, maxlen, item_index, negSampleMode)
@@ -126,9 +125,8 @@ if __name__ == '__main__':
         item_index, action_index = indexes
         ranker = ContextRNN(dim, maxlen, item_index, action_index, mode, 2)
 
-
-
-    runName = "%s_d%d_ml%d_%s_m%d_%s" % (modelName, dim, maxlen, negSampleMode, mode, datetime.now().strftime("%m-%d-%Y_%H-%M-%S"))
+    runName = "%s_d%d_ml%d_%s_m%d_%s" % (
+        modelName, dim, maxlen, negSampleMode, mode, datetime.now().strftime("%m-%d-%Y_%H-%M-%S"))
 
     # Start Training
 
@@ -140,14 +138,21 @@ if __name__ == '__main__':
         valSession, x_val, y_val = ranker.generate_data(df_val, "val")
         testSession, testItemId, x_test = ranker.generate_data(df_test, "test")
 
-
-
         for epoch in range(epochs):
 
-            t1 = time()
-            x_train, y_train = ranker.generate_data(df, "train")
-            t2 = time()
-            hist = ranker.model.fit(x_train, y_train, batch_size=256, verbose=1, epochs=1, shuffle=True)
+            if modelName in ["csrnn"]:
+                # Dynamic data
+                t1 = time()
+                t2 = time()
+                hist = ranker.model.fit_generator(ranker.generate_dynamic_data(df),
+                                                  steps_per_epoch=len(df.groupby("session_id")), epochs=1)
+            else:
+                # Static data
+                t1 = time()
+                x_train, y_train = ranker.generate_data(df, "train")
+                t2 = time()
+                hist = ranker.model.fit(x_train, y_train, batch_size=256, verbose=1, epochs=1, shuffle=True)
+
             loss = hist.history['loss'][0]
             t3 = time()
             if modelName == "am":
@@ -158,16 +163,16 @@ if __name__ == '__main__':
             ndcg = metric.calc_mean(valSession, y_val, pred)
 
             output = 'Iteration %d, data[%.1f s], train[%.1f s], loss = %.4f, NDCG = %.4f, test[%.1f s]' % (
-                epoch, t2 - t1, t3-t2, loss, ndcg, time() - t3)
+                epoch, t2 - t1, t3 - t2, loss, ndcg, time() - t3)
 
-            with open(path+"out/%s.out" % runName, "a") as myfile:
-                myfile.write(output+"\n")
+            with open(path + "out/%s.out" % runName, "a") as myfile:
+                myfile.write(output + "\n")
 
             print(output)
 
             if bestNDCG <= ndcg:
                 bestNDCG = ndcg
-                ranker.model.save(path+'h5/%s.h5' % runName)
+                ranker.model.save(path + 'h5/%s.h5' % runName)
             else:
                 print("Early Stopping")
                 break
@@ -177,22 +182,23 @@ if __name__ == '__main__':
         else:
             pred = ranker.get_score(x_test)[0].flatten().tolist()
 
-        df_rank = pd.DataFrame.from_dict({"session_id":testSession, "item": testItemId, "score":pred})
+        df_rank = pd.DataFrame.from_dict({"session_id": testSession, "item": testItemId, "score": pred})
         _df_rank = df_rank.groupby("session_id").tail(1)
-        df_rank = df_rank.groupby("session_id").apply(lambda x: x.sort_values(["score"], ascending = False)).reset_index(drop=True)
+        df_rank = df_rank.groupby("session_id").apply(lambda x: x.sort_values(["score"], ascending=False)).reset_index(
+            drop=True)
         df_rank = df_rank.groupby(['session_id'])['item'].apply(list)
-        df_rank = df_rank.apply(lambda x : ' '.join(x))
+        df_rank = df_rank.apply(lambda x: ' '.join(x))
         _df_rank["item_recommendations"] = df_rank.values
-        _df_test = df_test.groupby("session_id").tail(1)[df_test.action_type == "clickout item"][df_test.reference.isna()]
+        _df_test = df_test.groupby("session_id").tail(1)[df_test.action_type == "clickout item"][
+            df_test.reference.isna()]
         _df_rank = pd.merge(_df_rank, _df_test, on="session_id")
-        _df_rank[['user_id','session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(path+'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
+        _df_rank[['user_id', 'session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(
+            path + 'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
 
 
     else:
         valSession, x_val, y_val = ranker.generate_test_data(df_val)
         testSession, testItemId, x_test = ranker.generate_test_data(df_test, isValidate=False)
-
-
 
         for epoch in range(epochs):
             t1 = time()
@@ -204,16 +210,16 @@ if __name__ == '__main__':
             pred = ranker.get_score(x_val)[0].flatten()
             ndcg = metric.calc_mean(valSession, y_val, pred)
             output = 'Iteration %d, data[%.1f s], train[%.1f s], loss = %.4f, NDCG = %.4f, test[%.1f s]' % (
-                epoch, t2 - t1, t3-t2, loss, ndcg, time() - t3)
+                epoch, t2 - t1, t3 - t2, loss, ndcg, time() - t3)
 
-            with open(path+"out/%s.out" % runName, "a") as myfile:
-                myfile.write(output+"\n")
+            with open(path + "out/%s.out" % runName, "a") as myfile:
+                myfile.write(output + "\n")
 
             print(output)
 
             if bestNDCG <= ndcg:
                 bestNDCG = ndcg
-                ranker.model.save(path+'h5/%s.h5' % runName)
+                ranker.model.save(path + 'h5/%s.h5' % runName)
             else:
                 print("Early Stopping")
                 break
@@ -221,24 +227,27 @@ if __name__ == '__main__':
         # load the best model
         # ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects={'identity_loss': identity_loss, 'init_normal': init_normal})
         if modelName == "mr":
-            ranker.model = load_model(path+'h5/%s.h5' % runName, custom_objects = {'identity_loss': ranker.identity_loss, 'getDotDifference': ranker.getDotDifference, 'getDotDifferenceShape': ranker.getDotDifferenceShape})
+            ranker.model = load_model(path + 'h5/%s.h5' % runName,
+                                      custom_objects={'identity_loss': ranker.identity_loss,
+                                                      'getDotDifference': ranker.getDotDifference,
+                                                      'getDotDifferenceShape': ranker.getDotDifferenceShape})
 
         else:
-            ranker.model = load_model(path+'h5/%s.h5' % runName)
-
+            ranker.model = load_model(path + 'h5/%s.h5' % runName)
 
         pred = ranker.get_score(x_test)[0].flatten()
 
         # Generate submission file
 
-        df_rank = pd.DataFrame.from_dict({"id":testSession, "item": testItemId, "score":pred})
-        df_rank = df_rank.groupby("id").apply(lambda x: x.sort_values(["score"], ascending = False)).reset_index(drop=True)
+        df_rank = pd.DataFrame.from_dict({"id": testSession, "item": testItemId, "score": pred})
+        df_rank = df_rank.groupby("id").apply(lambda x: x.sort_values(["score"], ascending=False)).reset_index(
+            drop=True)
         df_rank = df_rank.groupby(['id'])['item'].apply(list)
-        df_rank = df_rank.apply(lambda x : ' '.join(x))
+        df_rank = df_rank.apply(lambda x: ' '.join(x))
         df_test["item_recommendations"] = df_rank.values
-        df_test[['user_id','session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(path+'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
+        df_test[['user_id', 'session_id', 'timestamp', 'step', 'item_recommendations']].to_csv(
+            path + 'res/submission_%s.csv' % runName, sep=',', header=True, index=False)
 
-
-    total_time = (time() - start ) / 3600
+    total_time = (time() - start) / 3600
     with open(path + "out/%s.out" % runName, "a") as myfile:
         myfile.write("Total time: %.2f h" % total_time + "\n")
